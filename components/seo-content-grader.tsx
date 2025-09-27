@@ -11,7 +11,7 @@ import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 import dynamic from "next/dynamic"
 
-const JSZip = dynamic(() => import("jszip"), { ssr: false })
+const JSZip = dynamic(() => import("jszip").then((mod) => ({ default: mod.default || mod })), { ssr: false })
 
 /**
  * SEO Content Grader – Standalone v1.3
@@ -77,7 +77,9 @@ async function downloadZip(
   files: { path: string; content: string }[],
   zipName = "passed_{YYYY}{MM}{DD}_{HH}{mm}_{count}.zip",
 ) {
-  const zip = new JSZip()
+  const JSZipModule = await import("jszip")
+  const JSZipConstructor = JSZipModule.default || JSZipModule
+  const zip = new JSZipConstructor()
   files.forEach((f) => zip.file(f.path, f.content))
   const blob = await zip.generateAsync({ type: "blob" })
   const url = URL.createObjectURL(blob)
