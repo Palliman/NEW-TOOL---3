@@ -609,7 +609,7 @@ For others, the barrier was the subscription fee. UO wasn't free-to-play — not
 
 And then there's the learning curve. Unlike modern MMOs with glowing quest markers, tutorials, and handholding, Ultima Online dropped you in with nothing but your wits. There were no rails. No "do this quest, then that one." If you didn't know what you were doing, you got eaten by a troll or mugged by another player in your first hour.
 
-All of that combined means a huge chunk of MMO fans never touched the game that basically started it all. That's why hubs like UOKing.com (aka UO King) are so valuable today — they compress the early confusion and get you playing.
+All of that combined means a huge chunk of MMO fans never touched the game that basically started it all. That's why hubs like UO King (aka UO King) are so valuable today — they compress the early confusion and get you playing.
 
 What Makes Ultima Online Special?
 
@@ -1160,6 +1160,14 @@ The article is now in the system and will be automatically evaluated!`)
           </Button>
           <Button variant="destructive" onClick={() => setDrafts([])}>
             Reset session
+          </Button>
+          <Button
+            variant="ghost"
+            onClick={() => {
+              setBrandTokens("")
+            }}
+          >
+            Clear brand tokens
           </Button>
         </div>
       </div>
