@@ -305,7 +305,7 @@ export default function SEOContentGraderStandalone() {
   const [busy, setBusy] = useState(false)
 
   // Guardrails + ops
-  const [brandTokens, setBrandTokens] = useState<string>("PacketDrip, BitCans, Drip Demons")
+  const [brandTokens, setBrandTokens] = useState<string>("")
   const [allowDomains, setAllowDomains] = useState<string>("yourdomain.com")
   const [concurrency, setConcurrency] = useState<number>(3)
   const [zipPattern, setZipPattern] = useState("passed_{YYYY}{MM}{DD}_{HH}{mm}_{count}.zip")
@@ -336,7 +336,7 @@ export default function SEOContentGraderStandalone() {
           setMaxPasses(saved.maxPasses || 3)
           setConcurrency(saved.concurrency || 3)
           setZipPattern(saved.zipPattern || "passed_{YYYY}{MM}{DD}_{HH}{mm}_{count}.zip")
-          setBrandTokens(saved.brandTokens || "PacketDrip, BitCans, Drip Demons")
+          setBrandTokens(saved.brandTokens || "")
           setAllowDomains(saved.allowDomains || "yourdomain.com")
         }
       } catch (error) {
@@ -396,31 +396,89 @@ export default function SEOContentGraderStandalone() {
 
   // Upload handlers
   const onFiles = async (files: FileList | null) => {
+    console.log("[v0] File upload started", files?.length)
     if (!files) return
-    const arr = Array.from(files).slice(0, 20)
-    const texts = await Promise.all(arr.map((f) => f.text()))
-    const newDrafts: Draft[] = texts.map((raw, i) => {
-      const html = normalizeToHtml(raw)
-      const stats = analyzeContent(html)
-      return {
-        id: uid(),
-        name: arr[i].name || `Draft_${i + 1}.txt`,
-        raw,
-        html,
-        meta: { primary: stats.suggestedPrimary || "", secondaries: stats.suggestedSecondaries || [] },
-        useFixConstraints: true,
-        stats,
-        history: [{ step: "upload", at: Date.now(), notes: `auto-init ${stats.wordCount} words` }],
-      }
-    })
-    // sensible defaults
-    setTargets((t) => ({
-      primaryMin: t.primaryMin ?? 0.01,
-      primaryMax: t.primaryMax ?? 0.018,
-      wordCountMin: t.wordCountMin ?? 1200,
-      fleschMin: t.fleschMin ?? 55,
-    }))
-    setDrafts((d) => [...d, ...newDrafts])
+
+    try {
+      const arr = Array.from(files).slice(0, 20)
+      console.log(
+        "[v0] Processing files:",
+        arr.map((f) => f.name),
+      )
+
+      const texts = await Promise.all(
+        arr.map(async (f, i) => {
+          try {
+            console.log("[v0] Reading file:", f.name)
+            const text = await f.text()
+            console.log("[v0] File read successfully:", f.name, "length:", text.length)
+            return text
+          } catch (error) {
+            console.error("[v0] Error reading file:", f.name, error)
+            throw error
+          }
+        }),
+      )
+
+      console.log("[v0] All files read, creating drafts...")
+
+      const newDrafts: Draft[] = texts.map((raw, i) => {
+        try {
+          console.log("[v0] Processing draft", i + 1, "length:", raw.length)
+          const html = normalizeToHtml(raw)
+          console.log("[v0] HTML normalized for draft", i + 1)
+
+          const stats = analyzeContent(html)
+          console.log("[v0] Content analyzed for draft", i + 1, "stats:", stats)
+
+          return {
+            id: uid(),
+            name: arr[i].name || `Draft_${i + 1}.txt`,
+            raw,
+            html,
+            meta: { primary: stats.suggestedPrimary || "", secondaries: stats.suggestedSecondaries || [] },
+            useFixConstraints: true,
+            stats,
+            history: [{ step: "upload", at: Date.now(), notes: `auto-init ${stats.wordCount} words` }],
+          }
+        } catch (error) {
+          console.error("[v0] Error processing draft", i + 1, error)
+          return {
+            id: uid(),
+            name: arr[i].name || `Draft_${i + 1}.txt`,
+            raw,
+            html: `<p>${raw}</p>`,
+            meta: { primary: "", secondaries: [] },
+            useFixConstraints: true,
+            stats: {
+              wordCount: raw.split(/\s+/).length,
+              flesch: 50,
+              topTerms: [],
+              suggestedPrimary: "",
+              suggestedSecondaries: [],
+              suggestedPrimaryCount: 0,
+            },
+            history: [{ step: "upload", at: Date.now(), notes: `fallback processing due to error` }],
+          }
+        }
+      })
+
+      console.log("[v0] Drafts created:", newDrafts.length)
+
+      // sensible defaults
+      setTargets((t) => ({
+        primaryMin: t.primaryMin ?? 0.01,
+        primaryMax: t.primaryMax ?? 0.018,
+        wordCountMin: t.wordCountMin ?? 1200,
+        fleschMin: t.fleschMin ?? 55,
+      }))
+
+      setDrafts((d) => [...d, ...newDrafts])
+      console.log("[v0] File upload completed successfully")
+    } catch (error) {
+      console.error("[v0] Critical error in file upload:", error)
+      alert("Error processing files. Please check the console for details and try again.")
+    }
   }
 
   const onPasteBulk = (bulk: string) => {
@@ -600,11 +658,7 @@ export default function SEOContentGraderStandalone() {
           <div className="grid md:grid-cols-3 gap-4">
             <div>
               <Label>Brand Tokens (required in content)</Label>
-              <Input
-                value={brandTokens}
-                onChange={(e) => setBrandTokens(e.target.value)}
-                placeholder="PacketDrip, BitCans, Drip Demons"
-              />
+              <Input value={brandTokens} onChange={(e) => setBrandTokens(e.target.value)} placeholder="" />
               <p className="text-xs opacity-70 mt-1">Comma-separated brand terms that must appear</p>
             </div>
             <div className="md:col-span-2">
