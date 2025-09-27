@@ -9,9 +9,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
-import dynamic from "next/dynamic"
-
-const JSZip = dynamic(() => import("jszip").then((mod) => ({ default: mod.default || mod })), { ssr: false })
+import JSZip from "jszip"
 
 /**
  * SEO Content Grader – Standalone v1.3
@@ -77,17 +75,20 @@ async function downloadZip(
   files: { path: string; content: string }[],
   zipName = "passed_{YYYY}{MM}{DD}_{HH}{mm}_{count}.zip",
 ) {
-  const JSZipModule = await import("jszip")
-  const JSZipConstructor = JSZipModule.default || JSZipModule
-  const zip = new JSZipConstructor()
-  files.forEach((f) => zip.file(f.path, f.content))
-  const blob = await zip.generateAsync({ type: "blob" })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement("a")
-  a.href = url
-  a.download = formatZipName(zipName, files.length)
-  a.click()
-  setTimeout(() => URL.revokeObjectURL(url), 5000)
+  try {
+    const zip = new JSZip()
+    files.forEach((f) => zip.file(f.path, f.content))
+    const blob = await zip.generateAsync({ type: "blob" })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement("a")
+    a.href = url
+    a.download = formatZipName(zipName, files.length)
+    a.click()
+    setTimeout(() => URL.revokeObjectURL(url), 5000)
+  } catch (error) {
+    console.error("Error creating zip file:", error)
+    alert("Error creating zip file. Please try again.")
+  }
 }
 
 function formatZipName(pattern: string, count: number) {
