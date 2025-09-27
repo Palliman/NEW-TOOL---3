@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useRef } from "react"
+import { useEffect, useState } from "react"
 import DensityGateV2, { type DensityGateTargets, type DensityGateResult } from "./DensityGate_v2" // keep this file next to this page
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -310,7 +310,7 @@ export default function SEOContentGraderStandalone() {
   const [concurrency, setConcurrency] = useState<number>(3)
   const [zipPattern, setZipPattern] = useState("passed_{YYYY}{MM}{DD}_{HH}{mm}_{count}.zip")
 
-  const isInitialLoad = useRef(true)
+  const [isInitialized, setIsInitialized] = useState(false)
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -324,53 +324,75 @@ export default function SEOContentGraderStandalone() {
 
   useEffect(() => {
     ;(async () => {
-      const saved = await idbGet<any>("dg_session")
-      if (saved) {
-        setDrafts(saved.drafts || [])
-        setTargets(saved.targets || {})
-        setProvider(saved.provider || "openai")
-        setApiKey(saved.apiKey || "")
-        setAutoLoop(Boolean(saved.autoLoop))
-        setMaxPasses(saved.maxPasses || 3)
-        setConcurrency(saved.concurrency || 3)
-        setZipPattern(saved.zipPattern || "passed_{YYYY}{MM}{DD}_{HH}{mm}_{count}.zip")
-        setBrandTokens(saved.brandTokens || "")
-        setAllowDomains(saved.allowDomains || "yourdomain.com")
+      try {
+        const saved = await idbGet<any>("dg_session")
+        if (saved) {
+          // Batch all state updates to prevent multiple re-renders
+          setDrafts(saved.drafts || [])
+          setTargets(saved.targets || {})
+          if (saved.provider) setProvider(saved.provider)
+          if (saved.apiKey) setApiKey(saved.apiKey)
+          setAutoLoop(Boolean(saved.autoLoop))
+          setMaxPasses(saved.maxPasses || 3)
+          setConcurrency(saved.concurrency || 3)
+          setZipPattern(saved.zipPattern || "passed_{YYYY}{MM}{DD}_{HH}{mm}_{count}.zip")
+          setBrandTokens(saved.brandTokens || "PacketDrip, BitCans, Drip Demons")
+          setAllowDomains(saved.allowDomains || "yourdomain.com")
+        }
+      } catch (error) {
+        console.error("Failed to load session:", error)
+      } finally {
+        setIsInitialized(true)
       }
-      // Mark initial load as complete
-      isInitialLoad.current = false
     })()
   }, [])
 
   useEffect(() => {
-    // Skip persistence during initial load to prevent infinite loop
-    if (isInitialLoad.current) return
+    if (!isInitialized) return
 
-    idbSet("dg_session", {
-      drafts,
-      targets,
-      provider,
-      apiKey,
-      autoLoop,
-      maxPasses,
-      concurrency,
-      zipPattern,
-      brandTokens,
-      allowDomains,
-    })
-  }, [drafts, targets, provider, apiKey, autoLoop, maxPasses, concurrency, zipPattern, brandTokens, allowDomains])
+    const timeoutId = setTimeout(() => {
+      idbSet("dg_session", {
+        drafts,
+        targets,
+        provider,
+        apiKey,
+        autoLoop,
+        maxPasses,
+        concurrency,
+        zipPattern,
+        brandTokens,
+        allowDomains,
+      }).catch((error) => {
+        console.error("Failed to save session:", error)
+      })
+    }, 100) // Debounce to prevent excessive saves
+
+    return () => clearTimeout(timeoutId)
+  }, [
+    isInitialized,
+    drafts,
+    targets,
+    provider,
+    apiKey,
+    autoLoop,
+    maxPasses,
+    concurrency,
+    zipPattern,
+    brandTokens,
+    allowDomains,
+  ])
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
+    if (isInitialized && typeof window !== "undefined") {
       localStorage.setItem("dg_provider", provider)
     }
-  }, [provider])
+  }, [isInitialized, provider])
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
+    if (isInitialized && typeof window !== "undefined") {
       localStorage.setItem("dg_apiKey", apiKey)
     }
-  }, [apiKey])
+  }, [isInitialized, apiKey])
 
   // Upload handlers
   const onFiles = async (files: FileList | null) => {
