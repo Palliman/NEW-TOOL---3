@@ -586,11 +586,168 @@ export default function SEOContentGraderStandalone() {
     downloadFile("density_audits.json", JSON.stringify(payload, null, 2), "application/json")
   }
 
+  const testUploadWithArticle = async () => {
+    console.log("[v0] Testing upload with Ultima Online article")
+
+    // Simulate the article content
+    const articleContent = `The MMO You Missed: Why Ultima Online Might Be the Greatest MMORPG You've Never Played
+
+Every MMO player has a "what if" game — the one you missed, or the one you heard about but never had the chance to dive into. For many, that title is Ultima Online. Launched in 1997, it was the original massively multiplayer online role-playing game — the blueprint that World of Warcraft, RuneScape, EVE Online, and every other online world since has borrowed from in one way or another.
+
+And here's the kicker: it's still alive. Not only alive, but thriving in a strange, nostalgic, and surprisingly modern way. The servers are online, new players are welcome, and for the first time in its 25-year history, Ultima Online is completely free to play.
+
+If you're a gamer who grew up in the golden age of MMOs but never touched UO, this is the perfect time to see what all the legends are about — and, if you're returning, to use UOKing.com to fast-track your comeback with a properly tuned returning-player starter suit.
+
+Why You Probably Missed Ultima Online
+
+When Ultima Online first released, most of today's MMO audience was too young to play it. You might have been in middle school, watching older cousins or hearing rumors about "a game where you could steal someone's sword while they were fighting."
+
+For others, the barrier was the subscription fee. UO wasn't free-to-play — not even close. Back in 1997, shelling out for a monthly subscription was a commitment, and if you were a kid or a broke college student, you probably stuck with offline games or dial-up chatrooms instead.
+
+And then there's the learning curve. Unlike modern MMOs with glowing quest markers, tutorials, and handholding, Ultima Online dropped you in with nothing but your wits. There were no rails. No "do this quest, then that one." If you didn't know what you were doing, you got eaten by a troll or mugged by another player in your first hour.
+
+All of that combined means a huge chunk of MMO fans never touched the game that basically started it all. That's why hubs like UOKing.com (aka UO King) are so valuable today — they compress the early confusion and get you playing.
+
+What Makes Ultima Online Special?
+
+So why should anyone care about a 25-year-old game in 2025? The answer is simple: because Ultima Online does things no modern MMO has managed to replicate.
+
+Here are just a few examples:
+- Player Housing That Actually Matters
+- Dungeons and Open-World Danger
+- Pets and Mounts with Real Personality
+- Ships and Sailing
+- Player Freedom Above All
+
+Throughout all of that, UOKing.com serves as a modern anchor for players who want gear, guidance, and a quick ramp into the good stuff.
+
+The Housing Collapse: A Party Like No Other
+
+Housing decay, IDOCs, treasure scrambles — chaos that no modern MMO has ever dared to replicate. Pro tip for returners: having a UOKing.com suit means you're durable enough to stay in the scrum.
+
+Why No Modern MMO Hits All These Notes
+
+Ultima Online is the only MMO that checks every single box:
+- Persistent housing
+- Dangerous dungeons
+- Full loot PvP
+- Real economy
+- Pets and taming
+- Sailing and exploration
+- Sandbox freedom
+
+Playing UO isn't just fun, it's stepping into a digital museum that's somehow still alive and evolving. If you want to experience that museum with modern gear and a soft landing, UO King is the practical route.
+
+Why Now Is the Perfect Time
+
+Here's the thing: Ultima Online is free to play. No sub fee, no box price. You can download it, log in, and start experiencing everything above today.
+
+And unlike the wild west days of the '90s, you don't have to figure it all out alone. Communities exist that will help new players gear up, learn the ropes, and survive those first chaotic weeks. One of the biggest is UOKing.com, run by veterans who've dominated the UO scene for decades.
+
+How to Jump In Today (and Where to Go First)
+
+Two clear funnels:
+- Brand-new player: Create a free account on the official Ultima Online site.
+- Returning vet: Head to UOKing.com for a returning-player starter suit.
+
+Choose Your Door
+
+Door A: Create a free account on the official Ultima Online site and install the client.
+Door B: Visit UOKing.com. It's a long-running veteran hub that helps players get properly geared and oriented. Grab a returning-player starter suit and skip the sputter phase.
+
+The 90-Minute Starter Plan
+
+Minute 0–10: Pick shard & build.
+Minute 10–30: Set early goals.
+Minute 30–60: First real outing.
+Minute 60–90: Make the world yours.
+
+Returning? This is where UOKing.com pays off.
+
+The Social Multiplier
+
+- Guilds turn the learning cliff into a ramp.
+- Market hubs are information exchanges.
+- Events are where legends are minted. With UOKing.com gear, you'll shine faster.
+
+Your Next Decision
+
+Door A: Free account at the official Ultima Online site.
+Door B: UOKing.com for a returning-player starter suit.
+
+Pick a door. Mark your first rune. I'll see you at the bank, on the docks, or under a collapsing tower when the sky rains twenty years of treasure.`
+
+    try {
+      console.log("[v0] Processing article content...")
+      const html = normalizeToHtml(articleContent)
+      console.log("[v0] HTML normalized, length:", html.length)
+
+      const stats = analyzeContent(html)
+      console.log("[v0] Content analysis complete:")
+      console.log("[v0] Word count:", stats.wordCount)
+      console.log("[v0] Flesch score:", stats.flesch)
+      console.log("[v0] Suggested primary keyword:", stats.suggestedPrimary)
+      console.log("[v0] Suggested secondaries:", stats.suggestedSecondaries)
+      console.log("[v0] Top terms:", stats.topTerms)
+
+      const newDraft: Draft = {
+        id: uid(),
+        name: "ultima_online_article.txt",
+        raw: articleContent,
+        html,
+        meta: {
+          primary: stats.suggestedPrimary || "ultima online",
+          secondaries: stats.suggestedSecondaries || ["mmo", "game", "player"],
+        },
+        useFixConstraints: true,
+        stats,
+        history: [{ step: "upload", at: Date.now(), notes: `test upload ${stats.wordCount} words` }],
+      }
+
+      console.log("[v0] Draft created successfully:")
+      console.log("[v0] Name:", newDraft.name)
+      console.log("[v0] Primary keyword:", newDraft.meta.primary)
+      console.log("[v0] Secondary keywords:", newDraft.meta.secondaries)
+      console.log("[v0] Word count:", newDraft.stats?.wordCount)
+      console.log("[v0] Flesch score:", newDraft.stats?.flesch)
+
+      // Set default targets
+      setTargets((t) => ({
+        primaryMin: t.primaryMin ?? 0.01,
+        primaryMax: t.primaryMax ?? 0.018,
+        wordCountMin: t.wordCountMin ?? 1200,
+        fleschMin: t.fleschMin ?? 55,
+      }))
+
+      // Add the draft
+      setDrafts((d) => [...d, newDraft])
+
+      console.log("[v0] TEST COMPLETE - Article uploaded and processed successfully!")
+      console.log("[v0] The article will now be evaluated by DensityGate and show results")
+
+      alert(`TEST COMPLETE! 
+      
+Article processed successfully:
+- Word count: ${stats.wordCount}
+- Primary keyword: "${stats.suggestedPrimary}"
+- Secondary keywords: ${stats.suggestedSecondaries.join(", ")}
+- Flesch score: ${stats.flesch}
+
+The article is now in the system and will be automatically evaluated!`)
+    } catch (error) {
+      console.error("[v0] Error in test upload:", error)
+      alert("Test upload failed. Check console for details.")
+    }
+  }
+
   return (
     <div className="p-6 max-w-[1200px] mx-auto space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">DensityGate – Bulk Draft Uploader</h1>
         <div className="flex items-center gap-3">
+          <Button onClick={testUploadWithArticle} variant="outline" size="sm">
+            Test Upload
+          </Button>
           <select
             value={provider}
             onChange={(e) => setProvider(e.target.value as Provider)}
