@@ -9,7 +9,9 @@ import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
-import JSZip from "jszip"
+import dynamic from "next/dynamic"
+
+const JSZip = dynamic(() => import("jszip"), { ssr: false })
 
 /**
  * SEO Content Grader – Standalone v1.3
@@ -412,6 +414,7 @@ export default function SEOContentGraderStandalone() {
             console.log("[v0] Reading file:", f.name)
             const text = await f.text()
             console.log("[v0] File read successfully:", f.name, "length:", text.length)
+            console.log("[v0] File content preview:", text.substring(0, 200) + "...")
             return text
           } catch (error) {
             console.error("[v0] Error reading file:", f.name, error)
@@ -430,6 +433,10 @@ export default function SEOContentGraderStandalone() {
 
           const stats = analyzeContent(html)
           console.log("[v0] Content analyzed for draft", i + 1, "stats:", stats)
+          console.log("[v0] Suggested primary keyword:", stats.suggestedPrimary)
+          console.log("[v0] Suggested secondaries:", stats.suggestedSecondaries)
+          console.log("[v0] Word count:", stats.wordCount)
+          console.log("[v0] Flesch score:", stats.flesch)
 
           return {
             id: uid(),
@@ -464,6 +471,14 @@ export default function SEOContentGraderStandalone() {
       })
 
       console.log("[v0] Drafts created:", newDrafts.length)
+      newDrafts.forEach((draft, i) => {
+        console.log(`[v0] Draft ${i + 1} details:`, {
+          name: draft.name,
+          wordCount: draft.stats?.wordCount,
+          primary: draft.meta.primary,
+          secondaries: draft.meta.secondaries,
+        })
+      })
 
       // sensible defaults
       setTargets((t) => ({
@@ -475,6 +490,7 @@ export default function SEOContentGraderStandalone() {
 
       setDrafts((d) => [...d, ...newDrafts])
       console.log("[v0] File upload completed successfully")
+      console.log("[v0] Total drafts now:", drafts.length + newDrafts.length)
     } catch (error) {
       console.error("[v0] Critical error in file upload:", error)
       alert("Error processing files. Please check the console for details and try again.")
